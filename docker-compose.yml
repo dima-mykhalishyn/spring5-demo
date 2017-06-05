@@ -1,0 +1,37 @@
+version: '2'
+services:
+
+# service maven install container
+ service_maven_install:
+  build:
+   context: ./rates-service
+   dockerfile: ./Dockerfile
+  image: rates_service_boot
+
+# ui maven install container
+ ui_maven_install:
+  build:
+    context: ./rates-ui
+    dockerfile: ./Dockerfile
+  image: rates_ui_boot
+
+ service.application.start:
+    image: rates_service_boot
+    ports:
+      - "8091:8081"
+    command:
+      sh -c 'java -jar /usr/src/app/target/rates-service-0.0.1-SNAPSHOT.jar'
+    depends_on:
+      - service_maven_install
+
+ ui.application.start:
+    image: rates_ui_boot
+    ports:
+      - "8092:8082"
+    command:
+      sh -c 'java -Dspring.profiles.active=docker -jar /usr/src/app/target/rates-ui-0.0.1-SNAPSHOT.jar'
+    links:
+      - service.application.start
+    depends_on:
+      - service.application.start
+      - ui_maven_install

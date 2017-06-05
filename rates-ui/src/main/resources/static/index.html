@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Spring Streaming</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/3.3.7/css/bootstrap-theme.min.css"/>
+    <link rel="stylesheet" href="/webjars/bootstrap/3.3.7/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="/webjars/highcharts/5.0.8/css/highcharts.css"/>
+</head>
+<body>
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/">Currency Rates</a>
+        </div>
+    </div>
+</nav>
+<div class="container wrapper">
+    <div id="chart" style="height: 400px; min-width: 310px"></div>
+</div>
+<script type="text/javascript" src="/webjars/jquery/1.11.1/jquery.min.js"></script>
+<script type="text/javascript" src="/webjars/highcharts/5.0.8/highcharts.js"></script>
+<script type="text/javascript" src="/webjars/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+    var label = 'Euro rates';
+    var chart = new Highcharts.chart('chart', {
+        title: {
+            text: label
+        },
+        yAxis: {
+            title: {
+                text: label
+            }
+        },
+        legend: {
+            layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'middle'
+        },
+        xAxis: {
+            type: 'datetime',
+            labels: {
+                formatter: function () {
+                    return Highcharts.dateFormat('%a %d %b', this.value);
+                }
+            }
+        },
+        series: [{
+            name: 'USD',
+            data: []
+        },{
+            name: 'CHF',
+            data: []
+        },{
+            name: 'GBP',
+            data: []
+        },{
+            name: 'PLN',
+            data: []
+        },{
+            name: 'JPY',
+            data: []
+        }]
+    });
+    var appendRateData = function (data) {
+        chart.series
+            .forEach(function (serie) {
+                var shift = serie.data.length > 40;
+                var date = data.date.split("-");
+                serie.addPoint([Date.UTC(date[0],date[1],date[2]), data.rates[serie.name]], true, shift);
+            });
+    };
+    var rateEventSource = new EventSource("/rates/history");
+    rateEventSource.onmessage = function (e) {
+        appendRateData(JSON.parse(e.data));
+    }
+</script>
+</body>
+</html>
