@@ -55,7 +55,9 @@ public class RatesRouter {
 						})
 				.andRoute(
 						GET("/rates/latest").and(accept(APPLICATION_JSON)),
-						request -> getDateRate(request, ratesProducer, LocalDate.now()));
+						request -> getDateRate(request, ratesProducer, LocalDate.now()))
+				.andRoute(GET("/healthcheck"), serverRequest -> ServerResponse.ok().build())
+				.andRoute(GET("/status"), serverRequest -> ServerResponse.ok().body(Mono.just("{\"status\":\"ok\"}"), String.class));
 	}
 
 	private Mono<ServerResponse> getDateRate(final ServerRequest request, final RatesProducer ratesProducer,
