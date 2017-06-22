@@ -2,6 +2,8 @@ package spring.example.controller;
 
 import com.netflix.appinfo.InstanceInfo;
 import com.netflix.discovery.EurekaClient;
+import com.netflix.loadbalancer.ZoneAwareLoadBalancer;
+import com.netflix.niws.loadbalancer.DiscoveryEnabledServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,23 +25,25 @@ import static org.springframework.http.MediaType.APPLICATION_STREAM_JSON;
 @RestController
 public class HomeController {
 
-	private final String RATES_SERVICE = "rates.service";
-
 	private final String url;
 
 	private final EurekaClient eurekaClient;
 
+	private final ZoneAwareLoadBalancer<DiscoveryEnabledServer> loadBalancer;
+
 	@Autowired
-	public HomeController(final EurekaClient eurekaClient) {
+	public HomeController(final EurekaClient eurekaClient,
+								 final ZoneAwareLoadBalancer<DiscoveryEnabledServer> loadBalancer) {
 		final LocalDate date = LocalDate.ofYearDay(2000, 1);
 		this.url = String.format("/rates/history/%d/%d/%d", date.getYear(), date.getMonthValue(), date.getDayOfMonth());
 		this.eurekaClient = eurekaClient;
+		this.loadBalancer = loadBalancer;
 	}
 
 	@GetMapping(path = "/rates/history", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Flux<ExchangeRate> fetchRatesStream() {
-		final InstanceInfo ratesService = this.eurekaClient.getNextServerFromEureka(RATES_SERVICE, false);
+		final InstanceInfo ratesService = ((DiscoveryEnabledServer) loadBalancer.chooseServer()).getInstanceInfo();
 		return WebClient.create(ratesService.getHomePageUrl())
 				.get()
 				.uri(url)
